@@ -1,0 +1,30 @@
+name: Deploy to AWS ECS
+
+on:
+  push:
+    branches:
+      - dev
+      - staging
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Login to AWS ECR
+        run: |
+          aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin 255945442255.dkr.ecr.ap-southeast-1.amazonaws.com
+
+      - name: Build and Push Docker Image
+        run: |
+          docker build -t my-website .
+          docker tag my-website:latest 255945442255.dkr.ecr.ap-southeast-1.amazonaws.com/my-website:latest
+          docker push 255945442255.dkr.ecr.ap-southeast-1.amazonaws.com/my-website:latest
+
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service --cluster my-cluster --service my-service --force-new-deployment
